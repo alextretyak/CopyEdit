@@ -92,3 +92,8 @@ class PasteEditCommand(sublime_plugin.TextCommand):
 		self.view.sel().clear()
 		for s in new_sels:
 			self.view.sel().add(s)
+
+class CopyEditListener(sublime_plugin.EventListener): # for support of standard main menu commands (Edit:Cut/Copy/Paste)
+    def on_text_command(self, view, command_name, args):
+        if command_name in ["cut", "copy", "paste"]:
+            return (command_name + "_edit", args)

@@ -1,5 +1,0 @@
-[
-	{ "keys": ["super+x"], "command": "cut_edit" },
-	{ "keys": ["super+c"], "command": "copy_edit" },
-	{ "keys": ["super+v"], "command": "paste_edit" }
-]
