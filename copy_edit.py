@@ -16,7 +16,7 @@ line_endings = {'CR': '\r', 'Unix': '\n', 'Windows': '\r\n'}
 
 def print_status_message(verb, numregions=None):
 	numregions = numregions or len(selection_strings)
-	numchars = sum([len(s) for s in selection_strings])
+	numchars = sum([len(s[0]) for s in selection_strings])
 	message = "{0} {1} character{2}".format(verb, numchars, 's' if numchars != 1 else '')
 	if numregions > 1:
 		message += " over {0} selection regions".format(numregions)
@@ -30,9 +30,9 @@ class CopyEditCommand(sublime_plugin.TextCommand):
 		new_sel_strings = []
 		for s in self.view.sel():
 			if len(s):
-				new_sel_strings.append(self.view.substr(s))
+				new_sel_strings.append((self.view.substr(s), False))
 			elif copy_with_empty_sel:
-				new_sel_strings.append(self.view.substr(self.view.full_line(s)))
+				new_sel_strings.append((self.view.substr(self.view.full_line(s)), True))
 
 		if all(s == new_sel_strings[0] for s in new_sel_strings):
 			new_sel_strings = [new_sel_strings[0]]
@@ -41,7 +41,7 @@ class CopyEditCommand(sublime_plugin.TextCommand):
 			selection_strings[:] = [] #.clear() doesn't exist in 2.7
 			selection_strings.extend(new_sel_strings)
 			line_ending = line_endings[self.view.line_endings()]
-			sublime.set_clipboard(line_ending.join(selection_strings))
+			sublime.set_clipboard(line_ending.join([s[0] for s in selection_strings]))
 			return True
 		return False
 	
@@ -61,9 +61,9 @@ class PasteEditCommand(sublime_plugin.TextCommand):
 		#check if clipboard is more up to date
 		pasteboard = sublime.get_clipboard()
 		from_clipboard = False
-		if pasteboard != '\n'.join(selection_strings):
+		if pasteboard != '\n'.join([s[0] for s in selection_strings]):
 			selection_strings[:] = [] #.clear() doesn't exist in 2.7
-			selection_strings.append(pasteboard)
+			selection_strings.append((pasteboard, False))
 			from_clipboard = True #what should be done in this case?
 		
 		numstrings = len(selection_strings)
@@ -84,8 +84,8 @@ class PasteEditCommand(sublime_plugin.TextCommand):
 			self.view.erase(edit, sel)
 			insertion_point = sel.begin()
 			for string in selection_strings[str_index:str_index+strs_per_sel]:
-				self.view.insert(edit, insertion_point, string)
-				insertion_point += len(string)
+				self.view.insert(edit, self.view.line(insertion_point).begin() if string[1] else insertion_point, string[0])
+				insertion_point += len(string[0])
 				region = sublime.Region(insertion_point)
 				new_sels.append(region)
 			str_index = (str_index + strs_per_sel) % numstrings
