@@ -90,6 +90,19 @@ This is CORRECT result:
 4. Set cursor to here ->THIS<-
 
 
+(4a)
+1. Select THIS
+2. Additionally select THIS
+3. Cut
+4. Set cursor to here -><-
+5. Paste
+
+This is CORRECT result:
+1. Select 
+2. Additionally select 
+4. Set cursor to here ->THIS<-
+
+
 (5)
 1. Select THIS
 2. Additionally select THIS
@@ -245,7 +258,7 @@ This is CORRECT result:
         while pos < len(tests):
             # Read test id [test number]
             skip_comments()
-            test_id = read_re(R"(\(\d+\))\n")[0]
+            test_id = read_re(R"(\(\w+\))\n")[0]
 
             # Read commands
             commands = read_list_of_commands()

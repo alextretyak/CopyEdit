@@ -23,6 +23,7 @@ def print_status_message(verb, numregions=None):
 	sublime.status_message(message)
 
 class CopyEditCommand(sublime_plugin.TextCommand):
+	@staticmethod
 	def copy(self, edit):
 		#See copy_with_empty_selection note above.
 		copy_with_empty_sel = self.view.settings().get("copy_with_empty_selection")
@@ -34,6 +35,7 @@ class CopyEditCommand(sublime_plugin.TextCommand):
 			elif copy_with_empty_sel:
 				new_sel_strings.append((self.view.substr(self.view.full_line(s)), True))
 
+		actual_selection_strings = new_sel_strings
 		if all(s == new_sel_strings[0] for s in new_sel_strings):
 			new_sel_strings = [new_sel_strings[0]]
 
@@ -42,18 +44,20 @@ class CopyEditCommand(sublime_plugin.TextCommand):
 			selection_strings.extend(new_sel_strings)
 			line_ending = line_endings[self.view.line_endings()]
 			sublime.set_clipboard(line_ending.join([s[0] for s in selection_strings]))
-			return True
+			return actual_selection_strings
 		return False
 	
-	def run(self, edit, verb="Copied"):
-		if self.copy(edit):
-			print_status_message(verb)
+	def run(self, edit):
+		if self.copy(self, edit):
+			print_status_message("Copied")
 
 class CutEditCommand(sublime_plugin.TextCommand):
 	def run(self, edit):
-		self.view.run_command("copy_edit", {"verb":"Cut"})
-		for s, ss in reversed(list(zip(self.view.sel(), selection_strings))):
-			self.view.erase(edit, self.view.full_line(s) if ss[1] else s)
+		actual_selection_strings = CopyEditCommand.copy(self, edit)
+		if actual_selection_strings:
+			print_status_message("Cut")
+			for s, ss in reversed(list(zip(self.view.sel(), actual_selection_strings))):
+				self.view.erase(edit, self.view.full_line(s) if ss[1] else s)
 
 class PasteEditCommand(sublime_plugin.TextCommand):
 	def run(self, edit):
