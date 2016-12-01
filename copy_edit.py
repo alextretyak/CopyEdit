@@ -52,8 +52,8 @@ class CopyEditCommand(sublime_plugin.TextCommand):
 class CutEditCommand(sublime_plugin.TextCommand):
 	def run(self, edit):
 		self.view.run_command("copy_edit", {"verb":"Cut"})
-		for s in reversed(self.view.sel()):
-			self.view.erase(edit, s)
+		for s, ss in reversed(list(zip(self.view.sel(), selection_strings))):
+			self.view.erase(edit, self.view.full_line(s) if ss[1] else s)
 
 class PasteEditCommand(sublime_plugin.TextCommand):
 	def run(self, edit):
