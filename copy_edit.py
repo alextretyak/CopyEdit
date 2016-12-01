@@ -33,7 +33,10 @@ class CopyEditCommand(sublime_plugin.TextCommand):
 				new_sel_strings.append(self.view.substr(s))
 			elif copy_with_empty_sel:
 				new_sel_strings.append(self.view.substr(self.view.full_line(s)))
-		
+
+		if all(s == new_sel_strings[0] for s in new_sel_strings):
+			new_sel_strings = [new_sel_strings[0]]
+
 		if len(new_sel_strings) > 0:
 			selection_strings[:] = [] #.clear() doesn't exist in 2.7
 			selection_strings.extend(new_sel_strings)
