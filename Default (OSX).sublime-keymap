@@ -1,0 +1,3 @@
+[
+	{ "keys": ["super+shift+v"], "command": "paste_from_history_edit" }
+]

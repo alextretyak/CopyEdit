@@ -1,4 +1,4 @@
-import sublime, sublime_plugin
+import sublime, sublime_plugin, collections
 
 selection_strings = []
 
@@ -43,7 +43,7 @@ class CopyEditCommand(sublime_plugin.TextCommand):
 			selection_strings[:] = [] #.clear() doesn't exist in 2.7
 			selection_strings.extend(new_sel_strings)
 			line_ending = line_endings[self.view.line_endings()]
-			sublime.set_clipboard(line_ending.join([s[0] for s in selection_strings]))
+			sublime.set_clipboard(add_string_to_paste_history(line_ending.join([s[0] for s in selection_strings])))
 			return actual_selection_strings
 		return False
 	
@@ -63,7 +63,7 @@ class PasteEditCommand(sublime_plugin.TextCommand):
 	def run(self, edit):
 		
 		#check if clipboard is more up to date
-		pasteboard = sublime.get_clipboard()
+		pasteboard = add_string_to_paste_history(sublime.get_clipboard()) # this is needed when string was copied to clipboard not within Sublime Text
 		from_clipboard = False
 		if pasteboard != '\n'.join([s[0] for s in selection_strings]):
 			selection_strings[:] = [] #.clear() doesn't exist in 2.7
@@ -100,7 +100,31 @@ class PasteEditCommand(sublime_plugin.TextCommand):
 		for s in new_sels:
 			self.view.sel().add(s)
 
+paste_history_deque = collections.deque(maxlen = 15) # 15 is the same as in SublimeText's "Paste from History" list
+
+def add_string_to_paste_history(string):#, do_not_reorder_entries_of_paste_history_deque = False):
+	if string == "":
+		return
+	if string in paste_history_deque:
+		paste_history_deque.remove(string)
+	paste_history_deque.appendleft(string)
+	return string
+
+class PasteFromHistoryIdxCommand(sublime_plugin.TextCommand):
+	def run(self, edit, idx):
+		if idx != -1:
+			sublime.set_clipboard(paste_history_deque[idx])
+			self.view.run_command("paste_edit")
+
+class PasteFromHistoryEditCommand(sublime_plugin.TextCommand):
+	def run(self, edit):
+		add_string_to_paste_history(sublime.get_clipboard()) # this is needed when string was copied to clipboard not within Sublime Text
+		if len(paste_history_deque) > 0:
+			(self.view.window().show_quick_panel if self.view.settings().get("paste_from_history_quick_panel") else self.view.show_popup_menu)(
+				[(s if len(s) < 45 else s[:45] + '...').replace("\n", " ").replace("\t", " ") for s in paste_history_deque],
+				lambda idx: self.view.run_command("paste_from_history_idx", {"idx": idx}))
+
 class CopyEditListener(sublime_plugin.EventListener): # for support of standard main menu commands (Edit:Cut/Copy/Paste)
     def on_text_command(self, view, command_name, args):
-        if command_name in ["cut", "copy", "paste"]:
+        if command_name in ["cut", "copy", "paste", "paste_from_history"]: # actually adding "paste_from_history" here does not make any sense because this command is disabled after startup of SublimeText
             return (command_name + "_edit", args)
