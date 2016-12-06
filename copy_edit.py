@@ -43,7 +43,7 @@ class CopyEditCommand(sublime_plugin.TextCommand):
 			selection_strings[:] = [] #.clear() doesn't exist in 2.7
 			selection_strings.extend(new_sel_strings)
 			line_ending = line_endings[self.view.line_endings()]
-			sublime.set_clipboard(add_string_to_paste_history(line_ending.join([s[0] for s in selection_strings])))
+			sublime.set_clipboard(add_string_to_paste_history(line_ending.join([s[0].replace('\n', line_ending) for s in selection_strings])))
 			return actual_selection_strings
 		return False
 	
