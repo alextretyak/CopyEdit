@@ -104,7 +104,7 @@ paste_history_deque = collections.deque(maxlen = 15) # 15 is the same as in Subl
 
 def add_string_to_paste_history(string):#, do_not_reorder_entries_of_paste_history_deque = False):
 	if string == "":
-		return
+		return ""
 	if string in paste_history_deque:
 		paste_history_deque.remove(string)
 	paste_history_deque.appendleft(string)
