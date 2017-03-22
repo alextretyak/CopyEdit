@@ -207,6 +207,19 @@ This is CORRECT result:
    to here -><-,
    and to here -><-.
     to here -><-.
+
+
+(10)
+1. Select THIS.
+2. Copy.
+3. Character-by-character select THIS.
+4. Paste.
+
+This is WRONG result:
+3. Character-by-character select THISTHISITHIS.
+
+This is CORRECT result:
+3. Character-by-character select THISTHISTHISTHIS.
 """
         pos = 0
         def read_re(rexp):
@@ -287,6 +300,13 @@ This is CORRECT result:
                 r = re.match(R"Additionally select (THIS\d*)$", cmd)
                 if r:
                     buffer.sel().add(buffer.find(r.group(1), where_command_starts().b, sublime.LITERAL))
+                    continue
+                r = re.match(R"Character-by-character select (THIS)$", cmd)
+                if r:
+                    buffer.sel().clear()
+                    start = buffer.find(r.group(1), where_command_starts().b, sublime.LITERAL).begin()
+                    for x in range(len(r.group(1))):
+                        buffer.sel().add(sublime.Region(start + x, start + x + 1))
                     continue
                 r = re.match(R"Set cursor\s+to here -><-(?:,\s+and to here -><-)?$", cmd)
                 if r:

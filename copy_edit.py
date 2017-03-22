@@ -82,17 +82,29 @@ class PasteEditCommand(sublime_plugin.TextCommand):
 		else:
 			strs_per_sel = numstrings
 		
-		str_index = 0
 		new_sels = []
-		for sel in self.view.sel():
-			self.view.erase(edit, sel)
-			insertion_point = sel.begin()
-			for string in selection_strings[str_index:str_index+strs_per_sel]:
-				self.view.insert(edit, self.view.line(insertion_point).begin() if string[1] else insertion_point, string[0])
-				insertion_point += len(string[0])
-				region = sublime.Region(insertion_point)
-				new_sels.append(region)
-			str_index = (str_index + strs_per_sel) % numstrings
+		if len(self.view.sel()) == numstrings or numstrings == 1: # fix for test #10 (character-by-character selection)
+			sel_strings = iter(selection_strings)
+			string = next(sel_strings)
+			for sel in self.view.sel():
+				replace_region = sublime.Region(self.view.line(sel.begin()).begin()) if string[1] else sel
+				self.view.replace(edit, replace_region, string[0])
+				new_sels.append(sublime.Region(replace_region.end() + len(string[0])))
+				string = next(sel_strings, None)
+				if string == None:
+					sel_strings = iter(selection_strings)
+					string = next(sel_strings)
+		else:
+			str_index = 0
+			for sel in self.view.sel():
+				self.view.erase(edit, sel)
+				insertion_point = sel.begin()
+				for string in selection_strings[str_index:str_index+strs_per_sel]:
+					self.view.insert(edit, self.view.line(insertion_point).begin() if string[1] else insertion_point, string[0])
+					insertion_point += len(string[0])
+					region = sublime.Region(insertion_point)
+					new_sels.append(region)
+				str_index = (str_index + strs_per_sel) % numstrings
 		
 		print_status_message("Pasted", len(self.view.sel()))
 		
