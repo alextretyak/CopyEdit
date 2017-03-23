@@ -140,3 +140,5 @@ class CopyEditListener(sublime_plugin.EventListener): # for support of standard 
     def on_text_command(self, view, command_name, args):
         if command_name in ["cut", "copy", "paste", "paste_from_history"]: # actually adding "paste_from_history" here does not make any sense because this command is disabled after startup of SublimeText
             return (command_name + "_edit", args)
+        if command_name in ["left_delete", "right_delete"]:
+        	add_string_to_paste_history(view.substr(view.sel()[0]))
