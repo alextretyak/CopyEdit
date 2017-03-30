@@ -244,7 +244,7 @@ This is CORRECT result:
 
         def skip_comments():
             nonlocal pos
-            while tests[pos] == '[':
+            while tests[pos] == '[': # [
                 #read_re(R"\[[^\[\]]+(?:\[[^\]]+\])?[^\]]+\]\n\n?")
                 nesting_level = 0
                 while True:
@@ -326,7 +326,7 @@ This is CORRECT result:
             # Read predetermined results
             compared_result_type = None
             while True:
-                skip_comments()
+                skip_comments() # [
                 type_of_result = read_re(R"This is (.+) result(?: \[[^\]]+])?:\n")[0]
                 rcommands = read_list_of_commands()
 
@@ -349,3 +349,181 @@ This is CORRECT result:
             print(test_id + ' ' + (compared_result_type if compared_result_type else "INCORRECT"))
 
         buffer.close()
+
+        # Those tests_neo (below) allow do testing much more accurately, and they can also check cursor/selection position after command was executed
+        tests_neo = """
+TN 0 // Test Number 0 — basic syntax [of this new language for tests] tests/checks
+"""+0*"""
+DA 1234
+CU 1>‘2’<34 //select/‘set CUrsor’ just one character ‘2’
+CR 1>‘2’<34 //paranoiac check result             1|2|34
+CU >>‘’. // just like pressing right arrow key → 12||34
+CR 12>‘’<34
+CU >‘’> // once more →                           123||4
+CR 123>‘’<4
+CU .‘’> // like pressing Shift + →               123|4|
+CR 123>‘4’<
+CU <‘’. // like pressing Shift + ←               12|34|
+CR 12>‘34’<
+CU <‘’< //                                       1|23|4
+CR 1>‘23’<4
+CU .‘’<                                          1|2|34
+CR 1>‘2’<34
+CU <‘’.                                          |12|34
+CR >‘12’<34
+CU .‘’<<                                         ||1234
+CR >‘’<1234
+CU >‘’>>                                         1|234|
+CR 1>‘234’<
+CU <<‘’>> // select all                          |1234|
+CR >‘1234’< // check/correct result
+CU >>‘’>> // End                                 1234||
+CR 1234>‘’<
+CU <<‘’<< // Home                                ||1234
+CR >‘’<1234
+"""+"""
+TN 1 // Just copy of (1) test
+DA‘1. Select >‘THIS’<
+2. Additionally [multi-] select >‘THIS2’< [also (e.g. with Ctrl+mouse)].’
+CO copy
+DA‘Set cursor to here ->>‘’<<-,
+   and [also (via Ctrl+click)] to here ->>‘’<<-.’
+CO paste
+CR‘Set cursor to here ->THIS>‘’<<-,
+   and [also (via Ctrl+click)] to here ->THIS2>‘’<<-.’
+
+TN 2 // Some newly discovered bug (for the sake of what all this new language (tests_neo) was created)
+DA >‘Test’<Test
+CO copy
+CO paste
+IR TestTest>‘’< // incorrect result
+CR Test>‘’<Test
+
+TN 3 // Just copy of (10) test (incorrect result observed at revision 55d7187e204f6159af33c257a4ebcc5bd4174cbb)
+DA 1. Select >‘THIS’<.
+CO copy
+DA 3. Character-by-character select >‘T’<>‘H’<>‘I’<>‘S’<.
+CO paste
+IR 3. Character-by-character select THIST>‘’<HIST>‘’<HIST>‘’<HIS.>‘’<
+CR 3. Character-by-character select THIS>‘’<THIS>‘’<THIS>‘’<THIS>‘’<.
+
+TN 4 // Something like test (10) (incorrect result observed at revision f70397b75fde9a1a6ff082d8acdd1a800bc613e5)
+DA >‘?’<
+CO copy
+DA >‘╚════’<
+CO split_selection_into_characters
+CR >‘╚’<>‘═’<>‘═’<>‘═’<>‘═’<
+CO paste
+IR ?>‘’<?>‘’<═?>‘’<?>‘’<
+CR ?>‘’<?>‘’<?>‘’<?>‘’<?>‘’<
+"""
+        # Create scratch buffer just for testing purposes
+        buffer = sublime.active_window().new_file()
+        buffer.set_scratch(True)
+
+        def switch_test():
+            print("passed")
+
+        pos = 0
+        while True:
+            # Skip empty lines
+            while pos < len(tests_neo) and tests_neo[pos] == '\n':
+                pos += 1
+
+            if pos == len(tests_neo):
+                break
+
+            # Read command
+            cmd = tests_neo[pos:pos+2]
+            pos += 2
+
+            # Read command data
+            if tests_neo[pos] == " ":
+                end_of_data = tests_neo.find("\n", pos)
+                data = tests_neo[pos+1: end_of_data]
+                comment_start = data.find("//")
+                if comment_start != -1:
+                    data = data[:comment_start]
+                data = data.rstrip()
+                pos = end_of_data
+            elif tests_neo[pos] == "‘": # ’
+                i = pos
+                nesting_level = 0
+                while True:
+                    ch = tests_neo[i]
+                    if ch == "‘":
+                        nesting_level += 1
+                    elif ch == "’":
+                        nesting_level -= 1
+                        if nesting_level == 0:
+                            break
+                    i += 1
+                    if i == len(tests_neo):
+                        raise 'Unpaired quote'
+                data = tests_neo[pos+1:i]
+                pos = i + 1
+            else:
+                print(tests_neo[pos:pos+33])
+                assert(False)
+
+            if cmd == "TN": # Test Number
+                if data != "0":
+                    switch_test()
+                print("Test " + data, end = " ")
+            elif cmd == "DA": # set DAta
+                # Find all selection/cursor marks in the data
+                new_sel = []
+                i = 0
+                while True:
+                    sel_start = data.find(">‘", i)
+                    if sel_start == -1:
+                        break
+                    sel_end = data.find("’<", sel_start + 2)
+                    assert(sel_end != -1)
+                    data = data[:sel_start] + data[sel_start+2:sel_end] + data[sel_end+2:] # remove service characters (i.e. cursor>‘’</select>‘ion’< mark)
+                    new_sel.append(sublime.Region(sel_start, sel_end-2))
+                # Fill up the scratch buffer with new data
+                buffer.run_command("select_all")
+                buffer.run_command("right_delete")
+                buffer.run_command("append", { "characters": data } ) # "insert" is not working totally correctly here, so "append" is used instead
+                buffer.sel().clear()
+                buffer.sel().add_all(new_sel)
+            elif cmd == "CU": # CUrsor/selection manipulation
+                # [-not implemented yet-]
+                pass
+            elif cmd == "CO":
+                overrided_command = sublime_plugin.on_text_command(buffer.id(), data, None)
+                buffer.run_command(*overrided_command if overrided_command[0] else (data,))
+            elif cmd == "IR" or cmd == "CR":
+                # Put all cursors/selections marks in buffer's text and compare it with data
+                buffer_data = buffer.substr(sublime.Region(0, buffer.size()))
+                new_data = ""
+                prev_pos = 0
+                for sel in buffer.sel():
+                    new_data += buffer_data[prev_pos:sel.begin()] + ">‘" + buffer_data[sel.begin():sel.end()] + "’<"
+                    prev_pos = sel.end()
+                new_data += buffer_data[prev_pos:]
+                if cmd == "IR":
+                    if new_data == data:
+                        print("incorrect result detected (command: IR‘"+data+"’")
+                        return # to skip buffer.close() call
+                else:
+                    assert(cmd == "CR")
+                    if new_data != data:
+                        print("check result failed (command: CR‘"+data+"’)")
+                        return # to skip buffer.close() call
+            else:
+                raise 'Unknown command ' + cmd
+
+        switch_test()
+        buffer.close()
+
+
+class split_selection_into_characters(sublime_plugin.TextCommand):
+    def run(self, edit):
+        newsel = []
+        for r in self.view.sel():
+            for x in range(r.begin(), r.end()):
+                newsel += [sublime.Region(x, x+1)]
+        self.view.sel().clear()
+        self.view.sel().add_all(newsel)
