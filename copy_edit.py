@@ -89,7 +89,7 @@ class PasteEditCommand(sublime_plugin.TextCommand):
 			for sel in self.view.sel():
 				replace_region = sublime.Region(self.view.line(sel.begin()).begin()) if string[1] else sel
 				self.view.replace(edit, replace_region, string[0])
-				new_sels.append(sublime.Region(replace_region.end() + len(string[0])))
+				new_sels.append(sublime.Region(replace_region.begin() + len(string[0])))
 				string = next(sel_strings, None)
 				if string == None:
 					sel_strings = iter(selection_strings)
