@@ -82,14 +82,12 @@ class PasteEditCommand(sublime_plugin.TextCommand):
 		else:
 			strs_per_sel = numstrings
 		
-		new_sels = []
 		if len(self.view.sel()) == numstrings or numstrings == 1: # fix for test #10 (character-by-character selection)
 			sel_strings = iter(selection_strings)
 			string = next(sel_strings)
 			for sel in self.view.sel():
 				replace_region = sublime.Region(self.view.line(sel.begin()).begin()) if string[1] else sel
 				self.view.replace(edit, replace_region, string[0])
-				new_sels.append(sublime.Region(replace_region.begin() + len(string[0])))
 				string = next(sel_strings, None)
 				if string == None:
 					sel_strings = iter(selection_strings)
@@ -103,11 +101,14 @@ class PasteEditCommand(sublime_plugin.TextCommand):
 					self.view.insert(edit, self.view.line(insertion_point).begin() if string[1] else insertion_point, string[0])
 					insertion_point += len(string[0])
 					region = sublime.Region(insertion_point)
-					new_sels.append(region)
 				str_index = (str_index + strs_per_sel) % numstrings
 		
 		print_status_message("Pasted", len(self.view.sel()))
 		
+		new_sels=[]
+		for s in self.view.sel():
+			caret=s.end()
+			new_sels.append(sublime.Region(caret,caret))
 		self.view.sel().clear()
 		for s in new_sels:
 			self.view.sel().add(s)
