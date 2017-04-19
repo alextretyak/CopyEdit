@@ -416,6 +416,21 @@ CR >‘╚’<>‘═’<>‘═’<>‘═’<>‘═’<
 CO paste
 IR ?>‘’<?>‘’<═?>‘’<?>‘’<
 CR ?>‘’<?>‘’<?>‘’<?>‘’<?>‘’<
+
+TN 5 // In accordance with Eyenseo's fix e07420b70dcc46c031e86f5f87b702430bd19c9a (incorrect result observed at revision 276f8a7790939301fe181bd66288d24febd56923)
+DA‘aaaa
+bb>‘’<bb
+cccc’
+CO copy
+CO paste
+IR‘aaaa
+bbbb
+>‘’<bbbb
+cccc’
+CR‘aaaa
+bbbb
+bb>‘’<bb
+cccc’
 """
         # Create scratch buffer just for testing purposes
         buffer = sublime.active_window().new_file()
