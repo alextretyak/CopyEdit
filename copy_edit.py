@@ -33,7 +33,7 @@ class CopyEditCommand(sublime_plugin.TextCommand):
 			if len(s):
 				new_sel_strings.append((self.view.substr(s), False))
 			elif copy_with_empty_sel:
-				new_sel_strings.append((self.view.substr(self.view.full_line(s)), True))
+				new_sel_strings.append((self.view.substr(self.view.line(s)) + "\n", True))
 
 		actual_selection_strings = new_sel_strings
 		if all(s == new_sel_strings[0] for s in new_sel_strings):

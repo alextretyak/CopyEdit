@@ -431,6 +431,13 @@ CR‘aaaa
 bbbb
 bb>‘’<bb
 cccc’
+
+TN 6
+DA lin>‘’<e
+CO copy
+CO paste
+CR‘line
+lin>‘’<e’
 """
         # Create scratch buffer just for testing purposes
         buffer = sublime.active_window().new_file()
