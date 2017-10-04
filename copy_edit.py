@@ -61,6 +61,7 @@ class CutEditCommand(sublime_plugin.TextCommand):
 
 class PasteEditCommand(sublime_plugin.TextCommand):
 	def run(self, edit):
+		global selection_strings
 		
 		#check if clipboard is more up to date
 		pasteboard = add_string_to_paste_history(sublime.get_clipboard()) # this is needed when string was copied to clipboard not within Sublime Text
@@ -75,6 +76,11 @@ class PasteEditCommand(sublime_plugin.TextCommand):
 		if numsels == 0:
 			return
 		
+		if numsels == 1: # To fix TN 7
+			selection_strings = [(("" if selection_strings[0][1] else "\n") # проверка нужна, так как если selection_strings[0][1] == True, то \n уже есть в конце строки
+				.join([s[0] for s in selection_strings]), selection_strings[0][1])]
+			numstrings = 1
+
 		if numstrings <= numsels and numsels % numstrings == 0:
 			strs_per_sel = 1
 		elif numsels < numstrings and numstrings % numsels == 0:
@@ -82,7 +88,7 @@ class PasteEditCommand(sublime_plugin.TextCommand):
 		else:
 			strs_per_sel = numstrings
 		
-		if len(self.view.sel()) == numstrings or numstrings == 1: # fix for test #10 (character-by-character selection)
+		if numsels == numstrings or numstrings == 1: # fix for test #10 (character-by-character selection)
 			sel_strings = iter(selection_strings)
 			string = next(sel_strings)
 			for sel in self.view.sel():

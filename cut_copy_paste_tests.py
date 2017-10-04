@@ -347,6 +347,8 @@ This is CORRECT result:
                     pos += 1 # skip \n
                     break
             print(test_id + ' ' + (compared_result_type if compared_result_type else "INCORRECT"))
+            if not compared_result_type:
+                return # to skip buffer.close() call
 
         buffer.close()
 
@@ -438,6 +440,16 @@ CO copy
 CO paste
 CR‘line
 lin>‘’<e’
+
+TN 7
+DA‘>‘1’<
+>‘2’<’
+CO copy
+DA‘’
+CO paste
+IR 12>‘’<
+CR‘1
+2>‘’<’
 """
         # Create scratch buffer just for testing purposes
         buffer = sublime.active_window().new_file()
@@ -509,7 +521,10 @@ lin>‘’<e’
                 buffer.run_command("right_delete")
                 buffer.run_command("append", { "characters": data } ) # "insert" is not working totally correctly here, so "append" is used instead
                 buffer.sel().clear()
-                buffer.sel().add_all(new_sel)
+                if new_sel: # это баг Sublime Text что приходится делать такую проверку (курсор должен сбрасываться автоматически в 0 позицию в этом/данном случае)
+                    buffer.sel().add_all(new_sel)
+                else:
+                    buffer.sel().add(sublime.Region(0))
             elif cmd == "CU": # CUrsor/selection manipulation
                 # [-not implemented yet-]
                 pass
@@ -527,7 +542,7 @@ lin>‘’<e’
                 new_data += buffer_data[prev_pos:]
                 if cmd == "IR":
                     if new_data == data:
-                        print("incorrect result detected (command: IR‘"+data+"’")
+                        print("incorrect result detected (command: IR‘"+data+"’)")
                         return # to skip buffer.close() call
                 else:
                     assert(cmd == "CR")
