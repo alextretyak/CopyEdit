@@ -279,11 +279,11 @@ This is CORRECT result:
             # Prepare scratch buffer
             buffer.run_command("select_all")
             buffer.run_command("right_delete")
-            buffer.run_command("append", { "characters": "".join([c[0] + '. ' + c[1] + "\n" for c in commands]) } ) # "insert" is not working totally correctly here, so "append" is used instead
-
-            # Process commands
-            for command in commands:
-                cmd = re.sub(R' \[[^]]+]', '', command[1]) # remove comments
+            buffer.run_command("append", { "characters": "".join([c[0] + '. ' + c[1] + "\n" for c in commands]) } ) # || "insert" is not working totally correctly here, so "append" is used instead
+                                                                                                                    # \\ To see what is the difference try
+            # Process commands                                                                                      # \\ `view.run_command("append", { "characters": " a\nb" } )`
+            for command in commands:                                                                                # \\ and
+                cmd = re.sub(R' \[[^]]+]', '', command[1]) # remove comments                                        # \\ `view.run_command("insert", { "characters": " a\nb" } )`
                 cmd = cmd.rstrip('.')#rstrip('.', 1) # remove ending `.` if present
                 if cmd in ["Cut", "Copy", "Paste"]:
                     #buffer.run_command(cmd.lower()) # this does not work, so emulate correct behaviour manually:
