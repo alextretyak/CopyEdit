@@ -450,6 +450,16 @@ CO paste
 IR 12>‘’<
 CR‘1
 2>‘’<’
+
+TN 8
+DA‘1>‘’<
+2’
+CO copy
+DA‘>‘1
+’<2’
+CO paste
+CR‘1
+>‘’<2’
 """
         # Create scratch buffer just for testing purposes
         buffer = sublime.active_window().new_file()

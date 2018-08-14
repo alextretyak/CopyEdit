@@ -92,7 +92,7 @@ class PasteEditCommand(sublime_plugin.TextCommand):
 			sel_strings = iter(selection_strings)
 			string = next(sel_strings)
 			for sel in self.view.sel():
-				replace_region = sublime.Region(self.view.line(sel.begin()).begin()) if string[1] else sel
+				replace_region = sublime.Region(self.view.line(sel.begin()).begin()) if string[1] and sel.size() == 0 else sel
 				self.view.replace(edit, replace_region, string[0])
 				string = next(sel_strings, None)
 				if string == None:
