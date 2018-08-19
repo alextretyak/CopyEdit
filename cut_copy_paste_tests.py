@@ -531,7 +531,7 @@ CR‘1
                 buffer.run_command("right_delete")
                 buffer.run_command("append", { "characters": data } ) # "insert" is not working totally correctly here, so "append" is used instead
                 buffer.sel().clear()
-                if new_sel: # это баг Sublime Text что приходится делать такую проверку (курсор должен сбрасываться автоматически в 0 позицию в этом/данном случае)
+                if new_sel:
                     buffer.sel().add_all(new_sel)
                 else:
                     buffer.sel().add(sublime.Region(0))

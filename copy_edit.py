@@ -77,7 +77,7 @@ class PasteEditCommand(sublime_plugin.TextCommand):
 			return
 		
 		if numsels == 1: # To fix TN 7
-			selection_strings = [(("" if selection_strings[0][1] else "\n") # проверка нужна, так как если selection_strings[0][1] == True, то \n уже есть в конце строки
+			selection_strings = [(("" if selection_strings[0][1] else "\n") # ‘this check is needed because if selection_strings[0][1] == True, then \n is already present at the end of line’\‘проверка нужна, так как если selection_strings[0][1] == True, то \n уже есть в конце строки’
 				.join([s[0] for s in selection_strings]), selection_strings[0][1])]
 			numstrings = 1
 
